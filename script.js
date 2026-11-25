@@ -108,7 +108,7 @@ if (track && group) {
 /* ---------- 7. GOOGLE MAPS ---------- */
 // Clé navigateur : restreindre aux domaines du site dans Google Cloud.
 // Activer Maps JavaScript API + Geocoding API et la facturation.
-const GOOGLE_MAPS_API_KEY = "AIzaSyA_ANPUMAapj0YlLCRXnwGfILhxq5RF9vk";
+const GOOGLE_MAPS_API_KEY = "AIzaSyD5FeR02azdjwXCHoW8-IJW5eeXV7dWo9I";
 const mapElement = document.getElementById("map");
 const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
