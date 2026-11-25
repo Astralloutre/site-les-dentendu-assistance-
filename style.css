@@ -11,7 +11,7 @@
   --pink-soft: #fbe3ee;
   --lime: #c9d22a;        /* vert anis — accent secondaire */
   --white: #ffffff;
-  --grey: #eeeeee;
+  --grey: #222743;
   --text: #222744;
   --text-muted: #5b6080;
 
@@ -304,22 +304,11 @@ a { color: inherit; }
 
 /* Carte */
 .map { height: 480px; border-radius: var(--radius-sm); overflow: hidden; z-index: 1; border: 2px solid #e6e7ee; cursor: crosshair; }
-.leaflet-container { font-family: var(--font-body); }
-.leaflet-popup-content-wrapper { border-radius: 14px; }
-.leaflet-popup-content { font-weight: 600; color: var(--navy); }
 
-/* Repère personnalisé (pin rose) */
-.pin { position: relative; width: 40px; height: 52px; }
-.pin__drop {
-  position: absolute; left: 50%; top: 0; width: 38px; height: 38px; margin-left: -19px;
-  background: var(--pink); border: 4px solid var(--white); border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg); box-shadow: 0 8px 18px rgba(34,39,68,.4);
-  animation: pinDrop .6s var(--ease);
-}
-.pin__drop::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--lime); }
-.pin__shadow { position: absolute; left: 50%; bottom: 0; width: 20px; height: 6px; margin-left: -10px; border-radius: 50%; background: rgba(0,0,0,.25); animation: pinShadow .6s var(--ease); }
-@keyframes pinDrop { from { transform: translateY(-60px) rotate(-45deg); opacity: 0; } 70% { transform: translateY(4px) rotate(-45deg); opacity: 1; } to { transform: rotate(-45deg); } }
-@keyframes pinShadow { from { transform: scale(.2); opacity: 0; } }
+/* Google Maps : ne pas contraindre les images internes. */
+.map img { max-width: none; }
+.map-message { height: 100%; display: flex; align-items: center; justify-content: center;
+  padding: 28px; text-align: center; background: #f7f7fa; color: var(--navy); cursor: default; }
 
 /* Infos du repère */
 .pin-info { margin-top: 18px; border-radius: var(--radius-sm); background: #f7f7fa; padding: 18px 22px; }

@@ -6,7 +6,7 @@
    4. Révélations au scroll
    5. Effet 3D / parallax du hero
    6. Marquee infini
-   7. Carte Leaflet + recherche d'adresse + repère
+   7. Google Maps + recherche d'adresse + repère
    8. Microsoft Forms (affichage ou message d'attente)
    ========================================================== */
 
@@ -25,7 +25,9 @@ if (window.Lenis && !window.matchMedia("(prefers-reduced-motion: reduce)").match
 // Liens d'ancre (#demande, #etapes...) : défilement doux
 document.querySelectorAll('a[href^="#"]').forEach((link) => {
   link.addEventListener("click", (e) => {
-    const target = document.querySelector(link.getAttribute("href"));
+    const href = link.getAttribute("href");
+    if (!href || href === "#") return;
+    const target = document.getElementById(href.slice(1));
     if (!target) return;
     e.preventDefault();
     closeMenu();
@@ -42,7 +44,7 @@ function onScroll() {
   const y = window.scrollY;
   const max = document.documentElement.scrollHeight - window.innerHeight;
   header.classList.toggle("is-scrolled", y > 40);       // fond flouté après 40px
-  progress.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
+  if (progress) progress.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
 }
 window.addEventListener("scroll", onScroll, { passive: true });
 onScroll();
@@ -78,7 +80,7 @@ document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el))
 // Sur ordinateur : la scène s'incline selon la position de la souris
 const heroVisual = document.getElementById("heroVisual");
 const heroScene = document.getElementById("heroScene");
-if (window.matchMedia("(hover: hover)").matches) {
+if (heroVisual && heroScene && window.matchMedia("(hover: hover)").matches) {
   heroVisual.addEventListener("mousemove", (e) => {
     const r = heroVisual.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width - 0.5;   // -0.5 → 0.5
@@ -90,179 +92,199 @@ if (window.matchMedia("(hover: hover)").matches) {
 // Sur tous les écrans : léger parallax vertical du visuel au scroll
 window.addEventListener("scroll", () => {
   const y = Math.min(window.scrollY, 800);
-  heroVisual.style.translate = `0 ${y * 0.12}px`;
+  if (heroVisual) heroVisual.style.translate = `0 ${y * 0.12}px`;
 }, { passive: true });
 
 /* ---------- 6. MARQUEE INFINI ---------- */
 // On duplique le groupe de mots : l'animation CSS translate de -50% boucle sans coupure
 const track = document.querySelector(".marquee__track");
-const group = track.querySelector(".marquee__group");
-const clone = group .cloneNode(true);
-clone.setAttribute("aria-hidden", "true");
-track.appendChild(clone);
+const group = track?.querySelector(".marquee__group");
+if (track && group) {
+ const clone = group.cloneNode(true);
+ clone.setAttribute("aria-hidden", "true");
+ track.appendChild(clone);
+}
 
-/* ---------- 7. CARTE LEAFLET / OPENSTREETMAP ---------- */
-const METZ = [49.1193, 6.1757];                       // centre par défaut : Metz
-const NOMINATIM = "https://nominatim.openstreetmap.org"; // service gratuit de géocodage OSM
-
-const map = L.map("map", { zoomControl: true, scrollWheelZoom: true }).setView(METZ, 12);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
-
-// Icône personnalisée du repère (le style est dans style.css → .pin)
-const pinIcon = L.divIcon({
-  className: "",
-  html: '<div class="pin"><span class="pin__shadow"></span><span class="pin__drop"></span></div>',
-  iconSize: [40, 52],
-  iconAnchor: [20, 50],
-  popupAnchor: [0, -46]
-});
-
-let marker = null;                    // repère actuel
-let current = null;                   // { lat, lng, address }
-
-// Éléments de la zone d'infos
+/* ---------- 7. GOOGLE MAPS ---------- */
+// Clé navigateur : restreindre aux domaines du site dans Google Cloud.
+// Activer Maps JavaScript API + Geocoding API et la facturation.
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_ANPUMAapj0YlLCRXnwGfILhxq5RF9vk";
+const mapElement = document.getElementById("map");
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
 const pinEmpty = document.getElementById("pinEmpty");
 const pinData = document.getElementById("pinData");
 const pinAddress = document.getElementById("pinAddress");
 const pinCoords = document.getElementById("pinCoords");
-const osmLink = document.getElementById("osmLink");
+const googleMapsLink = document.getElementById("googleMapsLink");
+let map, geocoder, AdvancedMarkerElement, PinElement;
+let marker = null, current = null;
+let pinVersion = 0, searchVersion = 0;
 
-// Pose (ou déplace) le repère et met à jour les infos
-function setPin(lat, lng, address) {
-  if (marker) marker.remove();
-  marker = L.marker([lat, lng], { icon: pinIcon, draggable: true }).addTo(map);
-  // Le repère peut être déplacé à la souris / au doigt
-  marker.on("dragend", () => {
-    const p = marker.getLatLng();
-    setPin(p.lat, p.lng);
-  });
-
-  current = { lat, lng, address: address || "Recherche de l'adresse…" };
-  updateInfo();
-  if (!address) reverseGeocode(lat, lng);
+function mapMessage(message) {
+  mapElement.replaceChildren();
+  const p = document.createElement("p");
+  p.className = "map-message";
+  p.setAttribute("role", "status");
+  p.textContent = message;
+  mapElement.appendChild(p);
 }
-
-// Affiche l'adresse et les coordonnées sous la carte
+function mapReady() {
+  if (map && geocoder) return true;
+  showToast("Carte indisponible : vérifiez la configuration Google Maps.");
+  return false;
+}
+window.gm_authFailure = () => {
+  map = null;
+  mapMessage("Google Maps : clé refusée. Vérifiez la clé API, les domaines autorisés et la facturation.");
+};
+window.initGoogleMap = async () => {
+  try {
+    const mapsLibrary = await google.maps.importLibrary("maps");
+    ({ AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker"));
+    const { Geocoder } = await google.maps.importLibrary("geocoding");
+    geocoder = new Geocoder();
+    map = new mapsLibrary.Map(mapElement, {
+      center: { lat: 49.1193, lng: 6.1757 }, zoom: 12,
+      mapId: "DEMO_MAP_ID", // Remplacer par votre identifiant de carte en production.
+      mapTypeControl: true, streetViewControl: true,
+      fullscreenControl: true, gestureHandling: "cooperative"
+    });
+    map.addListener("click", (event) => {
+      if (!event.latLng) return;
+      if (event.stop) event.stop();
+      setPin(event.latLng.lat(), event.latLng.lng());
+    });
+  } catch (error) {
+    console.error("Initialisation Google Maps", error);
+    map = null;
+    mapMessage("Impossible de charger Google Maps. Vérifiez la configuration du projet Google Cloud.");
+  }
+};
 function updateInfo() {
   pinEmpty.hidden = !!current;
   pinData.hidden = !current;
   if (!current) return;
   pinAddress.textContent = current.address;
   pinCoords.textContent = `${current.lat.toFixed(6)}, ${current.lng.toFixed(6)}`;
-  osmLink.href = `https://www.openstreetmap.org/?mlat=${current.lat}&mlon=${current.lng}#map=18/${current.lat}/${current.lng}`;
-  marker.bindPopup(current.address).openPopup();
+  googleMapsLink.href = `https://www.google.com/maps/search/?api=1&query=${current.lat},${current.lng}`;
 }
-
-// Coordonnées → adresse (géocodage inverse)
-async function reverseGeocode(lat, lng) {
-  try {
-    const res = await fetch(`${NOMINATIM}/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fr`);
-    const data = await res.json();
-    if (current && current.lat === lat) {
-      current.address = data?.display_name || "Adresse introuvable (position GPS conservée)";
-      updateInfo();
-    }
-  } catch {
-    current.address = "Adresse indisponible (position GPS conservée)";
-    updateInfo();
-  }
-}
-
-// Clic sur la carte → pose d'un repère
-map.on("click", (e) => setPin(e.latlng.lat, e.latlng.lng));
-
-/* --- Recherche d'adresse --- */
-const searchForm = document.getElementById("searchForm");
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
-
-searchForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const q = searchInput.value.trim();
-  if (q.length < 3) return showToast("Saisissez au moins 3 caractères");
-
-  searchResults.innerHTML = '<li class="is-empty">Recherche en cours…</li>';
-  searchResults.classList.add("is-open");
-  try {
-    const res = await fetch(`${NOMINATIM}/search?format=json&limit=5&countrycodes=fr&accept-language=fr&q=${encodeURIComponent(q)}`);
-    const results = await res.json();
-    // Supprime les doublons (même libellé d'adresse)
-    const list = Array.isArray(results) ? results : [];
-    renderResults(list.filter((r, i) => list.findIndex((o) => o.display_name === r.display_name) === i));
-  } catch {
-    searchResults.innerHTML = '<li class="is-empty">Service de recherche indisponible, réessayez.</li>';
-  }
-});
-
-// Affiche la liste des adresses trouvées
-function renderResults(results) {
-  searchResults.innerHTML = "";
-  if (!results.length) {
-    searchResults.innerHTML = '<li class="is-empty">Aucune adresse trouvée</li>';
-    return;
-  }
-  results.forEach((r, i) => {
-    const li = document.createElement("li");
-    li.textContent = r.display_name;
-    li.tabIndex = 0;
-    li.dataset.testid = `address-result-${i}`;
-    const choose = () => {
-      const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
-      map.flyTo([lat, lng], 17, { duration: 1.2 });
-      setPin(lat, lng, r.display_name);
-      searchResults.classList.remove("is-open");
-      searchInput.value = r.display_name;
-    };
-    li.addEventListener("click", choose);
-    li.addEventListener("keydown", (ev) => { if (ev.key === "Enter") choose(); });
-    searchResults.appendChild(li);
+async function setPin(lat, lng, address) {
+  const version = ++pinVersion;
+  if (marker) marker.map = null;
+  const pin = new PinElement({ background: "#d9307d", borderColor: "#ffffff", glyphColor: "#c9d22a" });
+  marker = new AdvancedMarkerElement({
+    map, position: { lat, lng }, gmpDraggable: true,
+    title: "Position de la cabine — déplacer pour ajuster", content: pin.element
   });
+  marker.addListener("dragend", (event) => {
+    if (event.latLng) setPin(event.latLng.lat(), event.latLng.lng());
+  });
+  current = { lat, lng, address: address || "Recherche de l’adresse…" };
+  updateInfo();
+  if (address) return;
+  try {
+    const { results } = await geocoder.geocode({ location: { lat, lng } });
+    if (version !== pinVersion || !current) return;
+    current.address = results[0]?.formatted_address || "Adresse introuvable (position GPS conservée)";
+  } catch {
+    if (version !== pinVersion || !current) return;
+    current.address = "Adresse indisponible (position GPS conservée)";
+  }
+  updateInfo();
 }
-
-// Ferme la liste si on clique ailleurs
+function resultMessage(message) {
+  searchResults.replaceChildren();
+  const li = document.createElement("li");
+  li.className = "is-empty";
+  li.textContent = message;
+  searchResults.appendChild(li);
+  searchResults.classList.add("is-open");
+}
+searchForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!mapReady()) return;
+  const query = searchInput.value.trim();
+  if (query.length < 3) return showToast("Saisissez au moins 3 caractères");
+  const version = ++searchVersion;
+  resultMessage("Recherche en cours…");
+  try {
+    const { results } = await geocoder.geocode({ address: query, componentRestrictions: { country: "FR" } });
+    if (version !== searchVersion) return;
+    searchResults.replaceChildren();
+    if (!results.length) return resultMessage("Aucune adresse trouvée");
+    results.slice(0, 5).forEach((result, index) => {
+      const li = document.createElement("li");
+      li.textContent = result.formatted_address;
+      li.tabIndex = 0;
+      li.dataset.testid = `address-result-${index}`;
+      const choose = () => {
+        ++searchVersion;
+        const position = result.geometry.location;
+        map.panTo(position);
+        map.setZoom(17);
+        setPin(position.lat(), position.lng(), result.formatted_address);
+        searchInput.value = result.formatted_address;
+        searchResults.classList.remove("is-open");
+      };
+      li.addEventListener("click", choose);
+      li.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); }
+      });
+      searchResults.appendChild(li);
+    });
+  } catch (error) {
+    if (version !== searchVersion) return;
+    resultMessage(String(error.code || error.message || error).includes("ZERO_RESULTS")
+        ? "Aucune adresse trouvée" : "Recherche indisponible. Vérifiez que Geocoding API est activée.");
+  }
+});
 document.addEventListener("click", (e) => {
-  if (!searchForm.contains(e.target)) searchResults.classList.remove("is-open");
+  if (!searchForm.contains(e.target)) { ++searchVersion; searchResults.classList.remove("is-open"); }
 });
-
-/* --- Géolocalisation "Ma position" --- */
+searchInput.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { ++searchVersion; searchResults.classList.remove("is-open"); }
+});
 document.getElementById("locateBtn").addEventListener("click", () => {
+  if (!mapReady()) return;
   if (!navigator.geolocation) return showToast("Géolocalisation non disponible");
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      map.flyTo([latitude, longitude], 17, { duration: 1.2 });
-      setPin(latitude, longitude);
-    },
-    () => showToast("Position refusée ou introuvable")
-  );
+  navigator.geolocation.getCurrentPosition(({ coords }) => {
+        if (!map) return;
+        map.panTo({ lat: coords.latitude, lng: coords.longitude });
+        map.setZoom(17);
+        setPin(coords.latitude, coords.longitude);
+      }, () => showToast("Position refusée ou introuvable. Autorisez la localisation et utilisez HTTPS."),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
 });
-
-/* --- Copier la position (à coller dans le formulaire) --- */
 document.getElementById("copyBtn").addEventListener("click", async () => {
   if (!current) return;
   const text = `${current.address} — GPS : ${current.lat.toFixed(6)}, ${current.lng.toFixed(6)}`;
   try {
     await navigator.clipboard.writeText(text);
-    showToast("Position copiée ✓ Collez-la dans le formulaire");
-  } catch {
-    showToast("Copie impossible, sélectionnez le texte manuellement");
-  }
+    showToast("Position copiée. Collez-la dans le formulaire.");
+  } catch { showToast("Copie impossible : sélectionnez les coordonnées manuellement."); }
 });
-
-/* --- Effacer le repère --- */
 document.getElementById("clearBtn").addEventListener("click", () => {
-  if (marker) marker.remove();
+  ++pinVersion;
+  if (marker) marker.map = null;
   marker = null;
   current = null;
   updateInfo();
 });
-
-// Leaflet recalcule sa taille quand la box apparaît (animation reveal)
-setTimeout(() => map.invalidateSize(), 600);
-window.addEventListener("resize", () => map.invalidateSize());
+// Chargement après l'initialisation du reste de la page.
+setTimeout(() => {
+  if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === "VOTRE_CLE_API_GOOGLE_MAPS") {
+    mapMessage("Pour afficher Google Maps, renseignez GOOGLE_MAPS_API_KEY dans script.js.");
+    return;
+  }
+  mapMessage("Chargement de Google Maps…");
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_API_KEY)}&loading=async&callback=initGoogleMap&v=weekly&language=fr&region=FR`;
+  script.onerror = () => mapMessage("Google Maps ne se charge pas. Vérifiez votre connexion ou votre bloqueur de contenu.");
+  document.head.appendChild(script);
+}, 0);
 
 /* ---------- 8. MICROSOFT FORMS ---------- */
 // Si aucune URL n'est renseignée dans l'iframe (index.html), on affiche le message d'attente

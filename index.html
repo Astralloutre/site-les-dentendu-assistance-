@@ -5,7 +5,7 @@
        PAGE "SERVICE MAINTENANCE" — Les Détendus
        Fichiers : index.html (structure) / style.css (design) / script.js (interactions)
        Bibliothèques externes (CDN) :
-         - Leaflet  : carte OpenStreetMap
+         - Google Maps : carte interactive (clé dans script.js)
          - Lenis    : défilement fluide (smooth scroll)
        ========================================================== -->
   <meta charset="UTF-8" />
@@ -21,8 +21,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Leaflet (carte) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Lenis (smooth scroll) -->
   <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.13/dist/lenis.css" />
 
@@ -31,314 +29,191 @@
 </head>
 <body>
 
-  <!-- Barre de progression du scroll (en haut de l'écran) -->
-  <div class="scroll-progress" id="scrollProgress" data-testid="scroll-progress"></div>
+<!-- =====================  EN-TÊTE  ===================== -->
+<header class="header" id="header" data-testid="site-header">
+  <div class="header__inner">
+    <a href="https://www.lesdetendus-loc.fr/" class="header__logos" data-testid="header-logo-link" aria-label="Retour à l'accueil Les Détendus">
+      <img src="assets/logo-chapellier.svg" alt="Logo Chapellier Environnement" class="logo-chapellier" />
+      <img src="assets/logo-detendus.svg" alt="Logo Les Détendus" class="logo-detendus" />
+    </a>
 
-  <!-- =====================  EN-TÊTE  ===================== -->
-  <header class="header" id="header" data-testid="site-header">
-    <div class="header__inner">
-      <a href="https://www.lesdetendus-loc.fr/" class="header__logos" data-testid="header-logo-link" aria-label="Retour à l'accueil Les Détendus">
-        <img src="assets/logo-chapellier.svg" alt="Logo Chapellier Environnement" class="logo-chapellier" />
-        <img src="assets/logo-detendus.svg" alt="Logo Les Détendus" class="logo-detendus" />
-      </a>
+    <!-- Menu principal (desktop) -->
+    <nav class="nav" id="nav" aria-label="Navigation principale">
+      <a href="#service" data-testid="nav-service">Le service</a>
+      <a href="#etapes" data-testid="nav-etapes">Comment ça marche</a>
+      <a href="#demande" data-testid="nav-demande">Demande d'intervention</a>
+      <a href="https://www.lesdetendus-loc.fr/" data-testid="nav-site">Retour au site</a>
+    </nav>
 
-      <!-- Menu principal (desktop) -->
-      <nav class="nav" id="nav" aria-label="Navigation principale">
-        <a href="#service" data-testid="nav-service">Le service</a>
-        <a href="#etapes" data-testid="nav-etapes">Comment ça marche</a>
-        <a href="#demande" data-testid="nav-demande">Demande d'intervention</a>
-        <a href="https://www.lesdetendus-loc.fr/" data-testid="nav-site">Retour au site</a>
-      </nav>
+    <a href="tel:0387384489" class="btn btn--call" data-testid="header-call-btn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      <span>03 87 38 44 89</span>
+    </a>
 
-      <a href="tel:0387384489" class="btn btn--call" data-testid="header-call-btn">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
-        <span>03 87 38 44 89</span>
-      </a>
+    <!-- Bouton menu mobile (hamburger) -->
+    <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" data-testid="mobile-menu-toggle">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
 
-      <!-- Bouton menu mobile (hamburger) -->
-      <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" data-testid="mobile-menu-toggle">
-        <span></span><span></span><span></span>
-      </button>
+<main>
+
+<!-- =====================  DEMANDE D'INTERVENTION : LES 2 BOX  ===================== -->
+<section class="request" id="demande" data-testid="request-section">
+  <svg class="wave wave--top" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M 0 40 C 40 120 60 -20 100 60 L 100 0 L 0 0 Z"/>
+  </svg>
+
+  <div class="container">
+    <div class="section-head section-head--light reveal">
+      <p class="eyebrow eyebrow--light">Demande d'intervention</p>
+      <h2 class="section-title">Où se trouve <span class="pink">votre sanitaire ?</span></h2>
+      <p class="section-lead">Recherchez une adresse ou cliquez directement sur la carte pour poser un repère, puis complétez le formulaire juste en dessous.</p>
     </div>
-  </header>
 
-  <main>
-    <!-- =====================  HERO  ===================== -->
-    <section class="hero" id="service" data-testid="hero-section">
-      <!-- Formes décoratives en arrière-plan -->
-      <div class="hero__blob hero__blob--pink" aria-hidden="true"></div>
-      <div class="hero__blob hero__blob--lime" aria-hidden="true"></div>
-
-      <div class="hero__grid">
-        <div class="hero__text">
-          <p class="eyebrow eyebrow--light hero__eyebrow">
-            <span class="dot"></span> Service maintenance &amp; entretien
-          </p>
-
-          <!-- Titre révélé ligne par ligne (animation CSS "masque") -->
-          <h1 class="hero__title" data-testid="hero-title">
-            <span class="line"><span>Des toilettes</span></span>
-            <span class="line"><span>toujours <em>propres,</em></span></span>
-            <span class="line"><span>on s'en <strong>occupe.</strong></span></span>
-          </h1>
-
-          <p class="hero__lead">
-            Livraison, installation puis <b>entretien hebdomadaire</b> : nettoyage et désinfection stricts
-            avec des produits respectueux de l'environnement. Un souci sur une cabine ?
-            Indiquez-nous où elle se trouve, on intervient.
-          </p>
-
-          <div class="hero__ctas">
-            <a href="#demande" class="btn btn--pink" data-testid="hero-cta-request">
-              Demander une intervention
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </a>
-            <a href="#etapes" class="btn btn--ghost" data-testid="hero-cta-steps">Comment ça marche</a>
-          </div>
-        </div>
-
-        <!-- Visuel 3D : la scène bouge légèrement avec la souris (voir script.js) -->
-        <div class="hero__visual" id="heroVisual" data-testid="hero-visual">
-          <div class="hero__scene" id="heroScene">
-            <div class="hero__frame">
-              <img src="assets/realisation-pelouse.jpg" alt="Deux rangées de sanitaires autonomes sur une pelouse" />
-            </div>
-            <img class="hero__agent" src="assets/agent-entretien.png" alt="Agent d'entretien souriant" />
-            <!-- Badge rotatif -->
-            <div class="hero__badge" aria-hidden="true">
-              <svg viewBox="0 0 200 200">
-                <defs><path id="circlePath" d="M100,100 m-75,0 a75,75 0 1,1 150,0 a75,75 0 1,1 -150,0"/></defs>
-                <text><textPath href="#circlePath">HYGIÈNE IRRÉPROCHABLE • ENTRETIEN HEBDO • </textPath></text>
-              </svg>
-              <img src="assets/picto-clean.svg" alt="" />
-            </div>
-          </div>
+    <!-- ---------- BOX 1 : CARTE GOOGLE MAPS ---------- -->
+    <div class="box reveal" id="mapBox" data-testid="map-box">
+      <div class="box__head">
+        <span class="box__step">1</span>
+        <div>
+          <h3 class="box__title">Localisez la cabine</h3>
+          <p class="box__sub">Cliquez sur la carte ou recherchez une adresse</p>
         </div>
       </div>
 
-      <!-- Vague de transition (même style que le site d'origine) -->
-      <svg class="wave wave--bottom" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M 0 60 C 40 -20 60 120 100 40 L 100 100 L 0 100 Z"/>
-      </svg>
-    </section>
-
-    <!-- =====================  BANDEAU DÉFILANT (marquee)  ===================== -->
-    <section class="marquee" aria-label="Nos prestations" data-testid="marquee">
-      <div class="marquee__track">
-        <!-- Le contenu est dupliqué dans script.js pour une boucle infinie sans coupure -->
-        <div class="marquee__group">
-          <span>Nettoyage</span><i>✦</i>
-          <span>Désinfection</span><i>✦</i>
-          <span>Vidange</span><i>✦</i>
-          <span>Réapprovisionnement</span><i>✦</i>
-          <span>Papier recyclé</span><i>✦</i>
-          <span>Produits écologiques</span><i>✦</i>
+      <!-- Barre de recherche d'adresse (géocodage Google Maps) -->
+      <form class="search" id="searchForm" autocomplete="off" data-testid="address-search-form">
+        <div class="search__field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input type="text" id="searchInput" placeholder="Ex : 12 rue Serpenoise, Metz" aria-label="Rechercher une adresse" data-testid="address-search-input" />
+          <!-- Liste des résultats de recherche -->
+          <ul class="search__results" id="searchResults" data-testid="address-search-results"></ul>
         </div>
-      </div>
-    </section>
+        <button type="submit" class="btn btn--pink btn--sm" data-testid="address-search-btn">Rechercher</button>
+        <button type="button" class="btn btn--outline btn--sm" id="locateBtn" data-testid="geolocate-btn" title="Utiliser ma position">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+          <span>Ma position</span>
+        </button>
+      </form>
 
-    <!-- =====================  ÉTAPES DU SERVICE (bento)  ===================== -->
-    <section class="steps" id="etapes" data-testid="steps-section">
-      <div class="container">
-        <div class="section-head reveal">
-          <p class="eyebrow">Comment ça marche</p>
-          <h2 class="section-title">Un entretien complet, <span class="pink">de A à Z</span></h2>
+      <!-- Conteneur de la carte. data-lenis-prevent : le scroll de la souris zoome la carte au lieu de faire défiler la page -->
+      <div class="map" id="map" data-lenis-prevent data-testid="google-map"></div>
+
+      <!-- Infos du repère sélectionné, à reporter dans le formulaire -->
+      <div class="pin-info" id="pinInfo" data-testid="pin-info">
+        <div class="pin-info__empty" id="pinEmpty">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          Aucun repère pour le moment — cliquez sur la carte.
         </div>
-
-        <div class="bento">
-          <article class="bento__card bento__card--big reveal" data-testid="step-card-1">
-            <span class="bento__num">01</span>
-            <h3>Livraison &amp; installation</h3>
-            <p>Notre équipe livre les sanitaires sur place et les installe pour votre chantier ou votre évènement.</p>
-            <img src="assets/camion.png" alt="Camion de livraison Les Détendus" class="bento__img bento__img--truck" />
-          </article>
-
-          <article class="bento__card bento__card--pink reveal" data-testid="step-card-2">
-            <span class="bento__num">02</span>
-            <h3>Entretien hebdomadaire</h3>
-            <p>Nettoyage et désinfection stricts pour garder des sanitaires propres et sains toute la location.</p>
-          </article>
-
-          <article class="bento__card bento__card--lime reveal" data-testid="step-card-3">
-            <span class="bento__num">03</span>
-            <h3>Réapprovisionnement</h3>
-            <p>Papier toilette recyclé, savon, gel hydroalcoolique : tout le nécessaire pour une hygiène irréprochable.</p>
-          </article>
-
-          <article class="bento__card bento__card--photo reveal" data-testid="step-card-4">
-            <img src="assets/realisation-neige.jpg" alt="Sanitaire autonome rose dans la neige" />
-            <div class="bento__overlay">
-              <span class="bento__num">04</span>
-              <h3>Signalement &amp; intervention</h3>
-              <p>Placez un repère sur la carte, remplissez le formulaire : on s'occupe du reste.</p>
-            </div>
-          </article>
-
-          <article class="bento__card bento__card--eco reveal" data-testid="step-card-5">
-            <img src="assets/picto-eco.svg" alt="" class="bento__picto" />
-            <div>
-              <h3>Engagement environnemental</h3>
-              <p>Des produits respectueux de l'environnement à chaque passage.</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- =====================  DEMANDE D'INTERVENTION : LES 2 BOX  ===================== -->
-    <section class="request" id="demande" data-testid="request-section">
-      <svg class="wave wave--top" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M 0 40 C 40 120 60 -20 100 60 L 100 0 L 0 0 Z"/>
-      </svg>
-
-      <div class="container">
-        <div class="section-head section-head--light reveal">
-          <p class="eyebrow eyebrow--light">Demande d'intervention</p>
-          <h2 class="section-title">Où se trouve <span class="pink">votre sanitaire ?</span></h2>
-          <p class="section-lead">Recherchez une adresse ou cliquez directement sur la carte pour poser un repère, puis complétez le formulaire juste en dessous.</p>
-        </div>
-
-        <!-- ---------- BOX 1 : CARTE OPENSTREETMAP / LEAFLET ---------- -->
-        <div class="box reveal" id="mapBox" data-testid="map-box">
-          <div class="box__head">
-            <span class="box__step">1</span>
-            <div>
-              <h3 class="box__title">Localisez la cabine</h3>
-              <p class="box__sub">Cliquez sur la carte ou recherchez une adresse</p>
-            </div>
+        <div class="pin-info__data" id="pinData" hidden>
+          <div class="pin-info__row">
+            <span class="label">Adresse</span>
+            <span class="value" id="pinAddress" data-testid="pin-address">—</span>
           </div>
-
-          <!-- Barre de recherche d'adresse (géocodage Nominatim / OpenStreetMap) -->
-          <form class="search" id="searchForm" autocomplete="off" data-testid="address-search-form">
-            <div class="search__field">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-              <input type="text" id="searchInput" placeholder="Ex : 12 rue Serpenoise, Metz" aria-label="Rechercher une adresse" data-testid="address-search-input" />
-              <!-- Liste des résultats de recherche -->
-              <ul class="search__results" id="searchResults" data-testid="address-search-results"></ul>
-            </div>
-            <button type="submit" class="btn btn--pink btn--sm" data-testid="address-search-btn">Rechercher</button>
-            <button type="button" class="btn btn--outline btn--sm" id="locateBtn" data-testid="geolocate-btn" title="Utiliser ma position">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>
-              <span>Ma position</span>
-            </button>
-          </form>
-
-          <!-- Conteneur de la carte. data-lenis-prevent : le scroll de la souris zoome la carte au lieu de faire défiler la page -->
-          <div class="map" id="map" data-lenis-prevent data-testid="leaflet-map"></div>
-
-          <!-- Infos du repère sélectionné, à reporter dans le formulaire -->
-          <div class="pin-info" id="pinInfo" data-testid="pin-info">
-            <div class="pin-info__empty" id="pinEmpty">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
-              Aucun repère pour le moment — cliquez sur la carte.
-            </div>
-            <div class="pin-info__data" id="pinData" hidden>
-              <div class="pin-info__row">
-                <span class="label">Adresse</span>
-                <span class="value" id="pinAddress" data-testid="pin-address">—</span>
-              </div>
-              <div class="pin-info__row">
-                <span class="label">Coordonnées GPS</span>
-                <span class="value mono" id="pinCoords" data-testid="pin-coords">—</span>
-              </div>
-              <div class="pin-info__actions">
-                <button type="button" class="btn btn--pink btn--sm" id="copyBtn" data-testid="copy-position-btn">Copier la position</button>
-                <a class="btn btn--outline btn--sm" id="osmLink" href="#" target="_blank" rel="noopener" data-testid="open-osm-link">Ouvrir dans OSM</a>
-                <button type="button" class="btn btn--text btn--sm" id="clearBtn" data-testid="clear-pin-btn">Effacer</button>
-              </div>
-            </div>
+          <div class="pin-info__row">
+            <span class="label">Coordonnées GPS</span>
+            <span class="value mono" id="pinCoords" data-testid="pin-coords">—</span>
+          </div>
+          <div class="pin-info__actions">
+            <button type="button" class="btn btn--pink btn--sm" id="copyBtn" data-testid="copy-position-btn">Copier la position</button>
+            <a class="btn btn--outline btn--sm" id="googleMapsLink" href="#" target="_blank" rel="noopener" data-testid="open-google-maps-link">Ouvrir dans Google Maps</a>
+            <button type="button" class="btn btn--text btn--sm" id="clearBtn" data-testid="clear-pin-btn">Effacer</button>
           </div>
         </div>
-
-        <!-- ---------- BOX 2 : MICROSOFT FORMS ---------- -->
-        <div class="box reveal" id="formBox" data-testid="form-box">
-          <div class="box__head">
-            <span class="box__step">2</span>
-            <div>
-              <h3 class="box__title">Décrivez votre demande</h3>
-              <p class="box__sub">Collez la position copiée dans le champ prévu du formulaire</p>
-            </div>
-          </div>
-
-          <div class="form-frame">
-            <!-- ===========================================================
-                 ➜ INTÉGRATION MICROSOFT FORMS
-                 1. Dans Microsoft Forms : "Collecter les réponses" > "Incorporer" (</>)
-                 2. Copiez l'URL contenue dans src="..." du code fourni
-                 3. Collez-la ci-dessous dans l'attribut src de l'iframe
-                 Tant que src est vide, un message d'attente s'affiche à la place.
-                 =========================================================== -->
-            <iframe
-              id="msForm"
-              src=""
-              title="Formulaire de demande d'intervention"
-              frameborder="0"
-              marginwidth="0"
-              marginheight="0"
-              allowfullscreen
-              webkitallowfullscreen
-              mozallowfullscreen
-              msallowfullscreen
-              data-testid="ms-form-iframe"
-            ></iframe>
-
-            <!-- Message affiché tant que le formulaire n'est pas branché -->
-            <div class="form-placeholder" id="formPlaceholder" data-testid="ms-form-placeholder">
-              <div class="form-placeholder__icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-              </div>
-              <h4>Le formulaire arrive bientôt</h4>
-              <p>En attendant, contactez-nous directement : nous traiterons votre demande rapidement.</p>
-              <a href="tel:0387384489" class="btn btn--pink btn--sm" data-testid="placeholder-call-btn">Appeler le 03 87 38 44 89</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- =====================  PIED DE PAGE  ===================== -->
-  <footer class="footer" data-testid="site-footer">
-    <div class="container footer__grid">
-      <div class="footer__brand">
-        <div class="footer__logos">
-          <img src="assets/logo-chapellier.svg" alt="Logo Chapellier Environnement" />
-          <img src="assets/logo-detendus.svg" alt="Logo Les Détendus" />
-        </div>
-        <p>Location et entretien de W.C chimiques et mobiles à Metz.</p>
-      </div>
-
-      <div>
-        <h4 class="footer__title">Nous contacter</h4>
-        <p>Vous avez une question ou un commentaire ? Faites-le nous savoir.</p>
-        <div class="footer__ctas">
-          <a href="https://www.lesdetendus-loc.fr/contact" class="btn btn--pink btn--sm" data-testid="footer-contact-btn">Un devis ? Une question ?</a>
-          <a href="tel:0387384489" class="btn btn--ghost btn--sm" data-testid="footer-call-btn">Appelez-nous</a>
-        </div>
-      </div>
-
-      <div>
-        <h4 class="footer__title">Nos horaires</h4>
-        <ul class="footer__hours">
-          <li><span>Lundi au jeudi</span> 8h00/12h00 – 13h30/18h00</li>
-          <li><span>Vendredi</span> 8h00/12h00 – 13h30/17h00</li>
-          <li><span>Samedi et dimanche</span> fermé</li>
-        </ul>
       </div>
     </div>
 
-    <div class="footer__bottom">
-      <span>© 2026 CHAPELLIER ENVIRONNEMENT</span>
-      <span>
+    <!-- ---------- BOX 2 : MICROSOFT FORMS ---------- -->
+    <div class="box reveal" id="formBox" data-testid="form-box">
+      <div class="box__head">
+        <span class="box__step">2</span>
+        <div>
+          <h3 class="box__title">Décrivez votre demande</h3>
+          <p class="box__sub">Collez la position copiée dans le champ prévu du formulaire</p>
+        </div>
+      </div>
+
+      <div class="form-frame">
+        <!-- ===========================================================
+             ➜ INTÉGRATION MICROSOFT FORMS
+             1. Dans Microsoft Forms : "Collecter les réponses" > "Incorporer" (</>)
+             2. Copiez l'URL contenue dans src="..." du code fourni
+             3. Collez-la ci-dessous dans l'attribut src de l'iframe
+             Tant que src est vide, un message d'attente s'affiche à la place.
+             =========================================================== -->
+        <iframe
+                id="msForm"
+                src=""
+                title="Formulaire de demande d'intervention"
+                frameborder="0"
+                marginwidth="0"
+                marginheight="0"
+                allowfullscreen
+                webkitallowfullscreen
+                mozallowfullscreen
+                msallowfullscreen
+                data-testid="ms-form-iframe"
+        ></iframe>
+
+        <!-- Message affiché tant que le formulaire n'est pas branché -->
+        <div class="form-placeholder" id="formPlaceholder" data-testid="ms-form-placeholder">
+          <div class="form-placeholder__icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+          </div>
+          <h4>Le formulaire arrive bientôt</h4>
+          <p>En attendant, contactez-nous directement : nous traiterons votre demande rapidement.</p>
+          <a href="tel:0387384489" class="btn btn--pink btn--sm" data-testid="placeholder-call-btn">Appeler le 03 87 38 44 89</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- =====================  PIED DE PAGE  ===================== -->
+<footer class="footer" data-testid="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__brand">
+      <div class="footer__logos">
+        <img src="assets/logo-chapellier.svg" alt="Logo Chapellier Environnement" />
+        <img src="assets/logo-detendus.svg" alt="Logo Les Détendus" />
+      </div>
+      <p>Location et entretien de W.C chimiques et mobiles à Metz.</p>
+    </div>
+
+    <div>
+      <h4 class="footer__title">Nous contacter</h4>
+      <p>Vous avez une question ou un commentaire ? Faites-le nous savoir.</p>
+      <div class="footer__ctas">
+        <a href="https://www.lesdetendus-loc.fr/contact" class="btn btn--pink btn--sm" data-testid="footer-contact-btn">Un devis ? Une question ?</a>
+        <a href="tel:0387384489" class="btn btn--ghost btn--sm" data-testid="footer-call-btn">Appelez-nous</a>
+      </div>
+    </div>
+
+    <div>
+      <h4 class="footer__title">Nos horaires</h4>
+      <ul class="footer__hours">
+        <li><span>Lundi au jeudi</span> 8h00/12h00 – 13h30/18h00</li>
+        <li><span>Vendredi</span> 8h00/12h00 – 13h30/17h00</li>
+        <li><span>Samedi et dimanche</span> fermé</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer__bottom">
+    <span>© 2026 CHAPELLIER ENVIRONNEMENT</span>
+    <span>
         <a href="https://www.lesdetendus-loc.fr/mentions-legales">Mentions légales</a> –
         <a href="https://www.lesdetendus-loc.fr/vie-privee">Vie privée</a>
       </span>
-    </div>
-  </footer>
+  </div>
+</footer>
 
-  <!-- Scripts : bibliothèques puis notre script -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
-  <script src="script.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Scripts : bibliothèques puis notre script -->
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
