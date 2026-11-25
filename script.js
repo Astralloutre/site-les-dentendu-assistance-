@@ -293,13 +293,3 @@ const formPlaceholder = document.getElementById("formPlaceholder");
 const formUrl = (msForm.getAttribute("src") || "").trim();
 msForm.classList.toggle("is-hidden", !formUrl);
 formPlaceholder.hidden = !!formUrl;
-
-/* ---------- PETIT MESSAGE (toast) ---------- */
-const toast = document.getElementById("toast");
-let toastTimer;
-function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add("is-show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("is-show"), 2600);
-}
